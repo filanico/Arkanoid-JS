@@ -1,6 +1,11 @@
 <html>
 	<head>
 		<style>
+			@import "animations.css";
+			@font-face{
+				font-family: "RetroGaming"; 
+				src:url(RetroGaming.ttf);
+			}
 			#stage{
 				width:500px;
 				height:500px;
@@ -18,17 +23,38 @@
 			}
 			.brick{
 				background-color: brown;
+				background: rgb(213,213,213);
+				background: linear-gradient(0deg, rgba(213,213,213,1) 0%, rgba(255,255,255,1) 41%, rgba(240,240,240,1) 73%, rgba(213,213,213,1) 100%);
 			}
-			.brick.damage-1{	background-color: #b06868 }
-			.brick.damage-2{	background-color: #FFF }
+			#banner{
+				text-align: center;
+				font: bold 24px "RetroGaming";
+				position:absolute;
+				height: 50px;
+				width:100%;
+				float: none;
+				display: block;
+				margin:0 auto;
+			    width: 500px;
+			    z-index: 3;
+			    color: #EFEFEF;
+			    margin-top:50%;
+			    -o-animation: fadeIt .5s  infinite; 
+            	animation: fadeIt .5s  infinite; 
+			}
+			.brick.damage-1{	background: rgb(255,0,0);	background: linear-gradient(0deg, rgba(255,0,0,1) 0%, rgba(255,255,255,1) 41%, rgba(240,240,240,1) 73%, rgba(255,0,0,1) 100%);}
+			.brick.damage-2{	background: rgb(242,105,105);background: linear-gradient(0deg, rgba(242,105,105,1) 0%, rgba(255,255,255,1) 41%, rgba(240,240,240,1) 73%, rgba(242,105,105,1) 100%);}
 		</style>
 		<script>
 			var stage_w=500;
 			var stage_h=500;
 			var gameLoop = null;
 			var bricks=[];
+			var ball=null;
+			var bar=null;
 			var brick_w=60;
 			var brick_h=20;
+			var autostart=0;
 			var Sprite = function(_opts){				
 				this.width = _opts.width||100;
 				this.height = _opts.height||10;
@@ -122,12 +148,34 @@
 						this.damage++;
 					}
 				}
+				// this.destroy=function(){
+
+				// }
 			}
 			Brick.prototype = Object.create(Sprite.prototype);
 
 			
 			window.onload = function(){
-				var bar = new Sprite({
+
+				// BANNER PRESS SPACE BAR 
+				var banner = document.createElement('div');
+				var stage = document.getElementById('stage');
+				banner.innerHTML='PRESS SPACE BAR !';
+				banner.id='banner';
+				banner.style.width=stage.offsetWidth;
+				banner.style['margin-top'] = stage_h/2-banner.style.height/2;
+				stage.append(banner);
+
+				// ON SPACEBAR PRESSED, HIDE BANNER AND START THE GAME !! :-)
+				document.addEventListener('keyup',function(e){
+					if( e.keyCode == 32 ){
+						// SPACEBAR
+						banner.style['display']='none';
+						game_start();
+					}
+				});
+
+				bar = new Sprite({
 					x:20,
 					height:10,
 					onKeydown:function(sprite,e){
@@ -151,7 +199,7 @@
 						sprite.moveXAt(sprite.x);
 					}
 				});
-				var ball = new Sprite({
+				ball = new Sprite({
 					id:'ball',					
 					x:0,
 					y:0,
@@ -170,20 +218,6 @@
 					}
 				});
 				
-				/*var brick = new Sprite({
-					id:'brick',
-					className:'brick',
-					x:10,
-					y:10,
-					x_dir:0,
-					y_dir:0,
-					width:60,
-					height:20,
-					onKeydown:function(sprite,e){
-						return;
-					}					
-				});*/
-
 				
 				for( var r=0;r<5;r++){	
 					for(var c=0;c<7;c++){
@@ -205,6 +239,13 @@
 					}
 				}
 				
+				if( autostart ){
+					game_start();
+				}
+				//bar.paint();
+			}
+
+			function game_start(){
 				gameLoop = setInterval(function(){
 					//ball.moveByX(10);
 					if( bricks.length==0 ){
@@ -229,8 +270,9 @@
 						//alert("GAME OVER!");
 					}
 					else if( ball.hitsBorderBottom() ){
-						clearInterval(gameLoop);
-						alert("GAME OVER!");
+						ball.y_dir *= -1;
+						// clearInterval(gameLoop);
+						// alert("GAME OVER!");
 					} else {
 						for(elem in bricks){
 							var brick=bricks[elem];
@@ -238,7 +280,8 @@
 								brick.onHit();								
 								ball.y_dir *= -1;
 								if( brick.damage==brick.damage_max ){
-									bricks.splice(0,1);
+									brick.node.remove();
+									bricks.splice(bricks.indexOf(brick),1);
 								}
 							}
 						}
@@ -248,8 +291,7 @@
 					//ball.moveByY(-10);
 					//console.log('ball: '+ball.x+','+ball.y);
 					//console.log('bar: '+bar.x+','+bar.y);
-				},50);
-				//bar.paint();
+				},5);
 			}
 		
 		</script>
