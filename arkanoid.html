@@ -16,11 +16,19 @@
 				border-radius:20px;
 				background-color: #FFF;
 			}
+			.brick{
+				background-color: brown;
+			}
+			.brick.damage-1{	background-color: #b06868 }
+			.brick.damage-2{	background-color: #FFF }
 		</style>
 		<script>
 			var stage_w=500;
 			var stage_h=500;
 			var gameLoop = null;
+			var bricks=[];
+			var brick_w=60;
+			var brick_h=20;
 			var Sprite = function(_opts){				
 				this.width = _opts.width||100;
 				this.height = _opts.height||10;
@@ -28,9 +36,10 @@
 				this.y = _opts.y||stage_h-this.height-10;
 				this.x_dir = _opts.x_dir||1;
 				this.y_dir = _opts.y_dir||1;
+				this.className=' '+(_opts.className||'');
 				this.node=document.createElement('div');
 				this.node.className='sprite';
-				this.node.className+=' '+_opts.className||'';
+				this.node.className+=this.className;
 				this.paint=function(){
 					var stage = document.querySelector('#stage');
 					this.node['id']=_opts.id||'bar';
@@ -99,6 +108,23 @@
 				this.paint();
 				this.prepareEventHandlers();
 			}
+
+			function Brick(_opts){
+				Sprite.call(this,_opts);
+				this.damage_max=3;
+				this.damage=0;
+
+				this.onHit=function(){
+					if(this.damage==this.damage_max){
+						this.node.remove();						
+					} else {
+						this.node.className+=' damage-'+this.damage;
+						this.damage++;
+					}
+				}
+			}
+			Brick.prototype = Object.create(Sprite.prototype);
+
 			
 			window.onload = function(){
 				var bar = new Sprite({
@@ -121,7 +147,7 @@
 						console.log(e.keyCode);
 					},
 					onPaint(sprite){
-						sprite.x = stage_w/2-parseFloat(sprite.w)/2;
+						sprite.x = stage_w/2-parseFloat(sprite.width)/2;
 						sprite.moveXAt(sprite.x);
 					}
 				});
@@ -137,26 +163,54 @@
 						return;
 					},
 					onPaint(sprite){
-						sprite.x = (bar.x+bar.width)/2-(sprite.width)/2;
+						sprite.x = (bar.x+bar.width/2)-(sprite.width)/2;
+						sprite.moveXAt(sprite.x);
+						sprite.y = bar.y - bar.height - 10;
+						sprite.moveYAt(sprite.y);
 					}
 				});
 				
-				var brick = new Sprite({
+				/*var brick = new Sprite({
 					id:'brick',
 					className:'brick',
 					x:10,
 					y:10,
 					x_dir:0,
 					y_dir:0,
-					width:100,
-					height:10,
+					width:60,
+					height:20,
 					onKeydown:function(sprite,e){
 						return;
 					}					
-				});
+				});*/
+
+				
+				for( var r=0;r<5;r++){	
+					for(var c=0;c<7;c++){
+						bricks.push(
+							new Brick({
+								id:'brick',
+								className:'brick',
+								x:10+c*(brick_w+5),
+								y:10+r*(brick_h+5),
+								x_dir:0,
+								y_dir:0,
+								width:brick_w,
+								height:brick_h,
+								onKeydown:function(sprite,e){
+									return;
+								}					
+							})
+						);
+					}
+				}
 				
 				gameLoop = setInterval(function(){
 					//ball.moveByX(10);
+					if( bricks.length==0 ){
+						alert("YOU WIN!");
+						clearInterval(gameLoop);
+					}
 					if( ball.hits(bar) ){
 						//alert("TAC");
 						ball.y_dir *= -1;
@@ -177,6 +231,17 @@
 					else if( ball.hitsBorderBottom() ){
 						clearInterval(gameLoop);
 						alert("GAME OVER!");
+					} else {
+						for(elem in bricks){
+							var brick=bricks[elem];
+							if( ball.hits(brick)){
+								brick.onHit();								
+								ball.y_dir *= -1;
+								if( brick.damage==brick.damage_max ){
+									bricks.splice(0,1);
+								}
+							}
+						}
 					}
 					ball.moveByX(10*ball.x_dir);
 					ball.moveByY(10*ball.y_dir);
